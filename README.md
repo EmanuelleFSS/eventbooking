@@ -1,8 +1,8 @@
 # Event Booking
 
-Plateforme de réservation d’événements (concerts, ateliers, conférences).
+An event booking platform built with a microservices architecture, showcasing asynchronous messaging (Kafka, RabbitMQ), polyglot persistence (PostgreSQL, MongoDB, Redis), and cloud-native practices.
 
->🚧 Application en cours de développement
+> 🚧 **Status**: Under active development
 
 ## Architecture
 
@@ -24,27 +24,51 @@ graph TD
     Search -.->|lecture| Assistant
 ````
 
-## Détail des services
+## Tech Stack
+
+- **Language**: Java 21
+- **Framework**: Spring Boot, Spring Data JPA
+- **Database**: PostgreSQL (Flyway migrations)
+- **Testing**: JUnit 5, Mockito, Testcontainers
+- **Containerization**: Docker, Docker Compose
+
+## Getting Started
+
+```bash
+docker compose up -d
+cd event-service
+./mvnw spring-boot:run
+```
+
+## Roadmap
+
+- [x] Phase 1 — Event Service (CRUD, PostgreSQL, tests, Docker)
+- [ ] Phase 2 — Booking Service + Kafka
+- [ ] Phase 3 — Notification Service (RabbitMQ) + Search Service (MongoDB)
+- [ ] Phase 4 — Redis cache + API Gateway + Security
+- [ ] Phase 5 — Load testing (Gatling)
+- [ ] Phase 6 — CI/CD + AI Assistant + Cloud deployment
+
+## Service Details
 
 ### Event Service
-* Réaliser la gestion du catalogue d'événements avec **PostreSQL** + **Spring Data JPA**.
-* Redis en cache pour les consultations, vu que les pages d’événements populaires sont consultées en masse, cependant elles sont peu modifiées.
+* Manages the event catalog with **PostgreSQL** + **Spring Data JPA**.
+* Redis as a cache for read operations, since popular event pages are read heavily but rarely modified.
 
 ### Booking Service
-* Création de réservations, décrémentation des places disponibles, en utilisant le verrouillage optimiste pour gérer la concurrence sur les réservations.
-* **PostreSQL** + **Kafka**.
+* Handles booking creation and available seats decrement, using optimistic locking to manage concurrency on reservations.
+* **PostgreSQL** + **Kafka**.
 
 ### Notification Service
-* Consomme une file **RabbitMQ** alimentée par *Booking Service* à chaque réservation.
-* Envoie un email de confirmation, avec gestion des échecs.
+* Consumes a **RabbitMQ** queue fed by the *Booking Service* on every booking.
+* Sends a confirmation email, with failure handling.
 
 ### Search Service
-* Consomme les événements **Kafka** pour maintenir une vue dénormalisée dans **MongoDB**.
+* Consumes **Kafka** events to maintain a denormalized view in **MongoDB**.
 
 ### API Gateway
-* Spring Cloud Gateway, routage vers les 3 services métier.
-* Spring Security avec JWT pour authentifier les utilisateurs (réservation nécessite d’être connecté).
+* Spring Cloud Gateway, routing to the 3 business services.
+* Spring Security with JWT to authenticate users (booking requires being logged in).
 
 ### AI Assistant
-* Un service dédié, qui appelle l’API Claude pour répondre aux questions utilisateur comme “quels événements y a-t-il ce week-end ?” en s’appuyant sur les données du catalogue.
-
+* A dedicated service that calls the Claude API to answer user questions such as "what events are happening this weekend?" based on the catalog data.
