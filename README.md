@@ -27,7 +27,7 @@ graph TD
 ## Tech Stack
 
 - **Language**: Java 21
-- **Framework**: Spring Boot, Spring Data JPA
+- **Framework**: Spring Boot 4, Spring Data JPA
 - **Database**: PostgreSQL (Flyway migrations)
 - **Testing**: JUnit 5, Mockito, Testcontainers
 - **Containerization**: Docker, Docker Compose
@@ -35,10 +35,21 @@ graph TD
 ## Getting Started
 
 ```bash
-docker compose up -d
-cd event-service
-./mvnw spring-boot:run
+# Create a .env file at the project root (see .env.example)
+docker compose up --build
 ```
+
+The API will be available at `http://localhost:8080`.
+
+## Event Service — API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|--------------|
+| POST | `/api/events` | Create a new event |
+| GET | `/api/events/{id}` | Get an event by id |
+| GET | `/api/events` | List events (paginated) |
+| PUT | `/api/events/{id}` | Update an event |
+| DELETE | `/api/events/{id}` | Delete an event |
 
 ## Roadmap
 
