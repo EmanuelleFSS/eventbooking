@@ -32,6 +32,12 @@ graph TD
 - **Testing**: JUnit 5, Mockito, Testcontainers
 - **Containerization**: Docker, Docker Compose
 
+## Timezone Handling
+
+- `eventDate` is stored as `OffsetDateTime` (`TIMESTAMPTZ` in PostgreSQL) — it preserves the original timezone offset of the event, since the local time of an event (e.g. "8 PM in Paris") is part of its meaning.
+- `createdAt` is stored as `Instant` (`TIMESTAMPTZ` in PostgreSQL) — a pure UTC timestamp with no local timezone semantics, since it's a technical record-creation marker.
+- Hibernate is explicitly configured to use UTC (`hibernate.jdbc.time_zone=UTC`) for all JDBC conversions, regardless of the host machine's default timezone.
+
 ## Getting Started
 
 ```bash
