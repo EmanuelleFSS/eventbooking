@@ -5,7 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table (name = "events")
@@ -25,7 +26,7 @@ public class Event {
     private String description;
 
     @Column(name = "event_date", nullable = false)
-    private LocalDateTime eventDate;
+    private OffsetDateTime eventDate;
 
     @Column(nullable = false)
     private String location;
@@ -40,5 +41,5 @@ public class Event {
     private Long version;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

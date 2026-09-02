@@ -10,7 +10,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -32,7 +34,7 @@ public class EventControllerIntegrationTest extends AbstractIntegrationTest {
     void shouldCreateEvent() throws Exception {
         EventRequest request = new EventRequest();
         request.setTitle("Jazz Concert");
-        request.setEventDate(LocalDateTime.now().plusDays(10));
+        request.setEventDate(OffsetDateTime.now().plusDays(10));
         request.setLocation("Paris");
         request.setTotalSeats(100);
 
@@ -57,7 +59,7 @@ public class EventControllerIntegrationTest extends AbstractIntegrationTest {
 
         EventRequest updateRequest = new EventRequest();
         updateRequest.setTitle("Updated Title");
-        updateRequest.setEventDate(LocalDateTime.now().plusDays(15));
+        updateRequest.setEventDate(OffsetDateTime.now().plusDays(15));
         updateRequest.setLocation("Lyon");
         updateRequest.setTotalSeats(150);
 
@@ -84,11 +86,11 @@ public class EventControllerIntegrationTest extends AbstractIntegrationTest {
     private Long createTestEvent(String title, String location, int totalSeats) {
         Event event = new Event();
         event.setTitle(title);
-        event.setEventDate(LocalDateTime.now().plusDays(10));
+        event.setEventDate(OffsetDateTime.now().plusDays(10));
         event.setLocation(location);
         event.setTotalSeats(totalSeats);
         event.setAvailableSeats(totalSeats);
-        event.setCreatedAt(LocalDateTime.now());
+        event.setCreatedAt(Instant.now());
         return eventRepository.save(event).getId();
     }
 }

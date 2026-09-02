@@ -5,7 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Data
 @Builder
@@ -16,9 +17,9 @@ public class EventResponse {
     private Long id;
     private String title;
     private String description;
-    private LocalDateTime eventDate;
+    private OffsetDateTime eventDate;
     private String location;
     private Integer totalSeats;
     private Integer availableSeats;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

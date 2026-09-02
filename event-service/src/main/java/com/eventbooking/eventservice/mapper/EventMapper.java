@@ -4,7 +4,7 @@ import com.eventbooking.eventservice.dto.EventRequest;
 import com.eventbooking.eventservice.dto.EventResponse;
 import com.eventbooking.eventservice.entity.Event;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public final class EventMapper {
 
@@ -17,7 +17,7 @@ public final class EventMapper {
         event.setEventDate(request.getEventDate());
         event.setLocation(request.getLocation());
         event.setTotalSeats(request.getTotalSeats());
-        event.setCreatedAt(LocalDateTime.now());
+        event.setCreatedAt(Instant.now());
         return event;
     }
 

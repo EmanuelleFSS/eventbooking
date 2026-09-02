@@ -13,7 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,18 +38,18 @@ public class EventServiceTest {
         existingEvent = new Event();
         existingEvent.setId(1L);
         existingEvent.setTitle("Jazz Concert");
-        existingEvent.setEventDate(LocalDateTime.now().plusDays(10));
+        existingEvent.setEventDate(OffsetDateTime.now().plusDays(10));
         existingEvent.setLocation("Paris");
         existingEvent.setTotalSeats(100);
         existingEvent.setAvailableSeats(70);
-        existingEvent.setCreatedAt(LocalDateTime.now());
+        existingEvent.setCreatedAt(Instant.now());
     }
 
     @Test
     void creatEvent_shouldSetAvailableSeatsEqualToTotalSeats() {
         EventRequest request = new EventRequest();
         request.setTitle("New Event");
-        request.setEventDate(LocalDateTime.now().plusDays(5));
+        request.setEventDate(OffsetDateTime.now().plusDays(5));
         request.setLocation("Lyon");
         request.setTotalSeats(50);
 
