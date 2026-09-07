@@ -17,6 +17,7 @@ graph TD
 
     Event -.->|cache| Redis[(Redis)]
 
+    Booking --> Event
     Booking -->|Kafka | Search
     Booking -->|Kafka | Notif[Notification Service]
     Booking -->|RabbitMQ: email queue| Notif

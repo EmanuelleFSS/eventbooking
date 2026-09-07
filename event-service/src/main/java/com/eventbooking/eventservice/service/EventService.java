@@ -4,6 +4,7 @@ import com.eventbooking.eventservice.dto.EventRequest;
 import com.eventbooking.eventservice.dto.EventResponse;
 import com.eventbooking.eventservice.entity.Event;
 import com.eventbooking.eventservice.exception.EventNotFoundException;
+import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
 import com.eventbooking.eventservice.mapper.EventMapper;
 import com.eventbooking.eventservice.repository.EventRepository;
@@ -58,6 +59,25 @@ public class EventService {
     private Event findEventOrThrow(Long id) {
         return eventRepository.findById(id)
                 .orElseThrow(() -> new EventNotFoundException(id));
+    }
+
+    public EventResponse reserveSeats(Long eventId, int seatsToReserve) {
+        Event event = findEventOrThrow(eventId);
+
+        if (event.getAvailableSeats() < seatsToReserve) {
+            throw new InsufficientSeatsException(eventId, seatsToReserve, event.getAvailableSeats());
+        }
+
+        event.setAvailableSeats(event.getAvailableSeats() - seatsToReserve);
+        Event updatedEvent = eventRepository.save(event);
+        return EventMapper.toResponse(updatedEvent);
+    }
+
+    public EventResponse releaseSeats(Long eventId, int seatsToRelease) {
+        Event event = findEventOrThrow(eventId);
+        event.setAvailableSeats(event.getAvailableSeats() + seatsToRelease);
+        Event updatedEvent = eventRepository.save(event);
+        return EventMapper.toResponse(updatedEvent);
     }
 
     private Integer calculateUpdatedAvailableSeats(Event event, Integer newTotalSeats) {

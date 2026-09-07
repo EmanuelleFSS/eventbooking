@@ -2,6 +2,7 @@ package com.eventbooking.eventservice.controller;
 
 import com.eventbooking.eventservice.dto.EventRequest;
 import com.eventbooking.eventservice.dto.EventResponse;
+import com.eventbooking.eventservice.dto.SeatsRequest;
 import com.eventbooking.eventservice.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -49,5 +50,17 @@ public class EventController {
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
         eventService.deleteEvent(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/reserve-seats")
+    public ResponseEntity<EventResponse> reserveSeats(@PathVariable Long id, @Valid @RequestBody SeatsRequest request) {
+        EventResponse eventResponse = eventService.reserveSeats(id,request.getSeats());
+        return ResponseEntity.ok(eventResponse);
+    }
+
+    @PatchMapping("/{id}/release-seats")
+    public ResponseEntity<EventResponse> releaseSeats(@PathVariable Long id, @Valid @RequestBody SeatsRequest request) {
+        EventResponse eventResponse = eventService.releaseSeats(id, request.getSeats());
+        return ResponseEntity.ok(eventResponse);
     }
 }
