@@ -18,6 +18,8 @@ spring:
       retries: 3
       properties:
         enable.idempotence: true
-
+  restclient:
+    connect-timeout: 3s
+    read-timeout: 5s
 event-service:
   base-url: ${EVENT_SERVICE_URL:http://localhost:8080}
