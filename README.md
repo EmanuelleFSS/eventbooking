@@ -58,10 +58,18 @@ The API will be available at `http://localhost:8080`.
 | PUT | `/api/events/{id}` | Update an event |
 | DELETE | `/api/events/{id}` | Delete an event |
 
+## Booking Service — API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|--------------|
+| POST | `/api/bookings` | Create a booking (synchronously reserves seats on Event Service) |
+| GET | `/api/bookings/{id}` | Get a booking by id |
+| POST | `/api/bookings/{id}/cancel` | Cancel a booking (releases seats via compensation) |
+
 ## Roadmap
 
 - [x] Phase 1 — Event Service (CRUD, PostgreSQL, tests, Docker)
-- [ ] Phase 2 — Booking Service + Kafka
+- [x] Phase 2 — Booking Service + Kafka
 - [ ] Phase 3 — Notification Service (RabbitMQ) + Search Service (MongoDB)
 - [ ] Phase 4 — Redis cache + API Gateway + Security
 - [ ] Phase 5 — Load testing (Gatling)
