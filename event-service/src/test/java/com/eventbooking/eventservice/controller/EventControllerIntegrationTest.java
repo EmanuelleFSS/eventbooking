@@ -2,6 +2,7 @@ package com.eventbooking.eventservice.controller;
 
 import com.eventbooking.eventservice.AbstractIntegrationTest;
 import com.eventbooking.eventservice.dto.EventRequest;
+import com.eventbooking.eventservice.dto.SeatsRequest;
 import com.eventbooking.eventservice.entity.Event;
 import com.eventbooking.eventservice.repository.EventRepository;
 import org.junit.jupiter.api.Test;
@@ -81,6 +82,49 @@ public class EventControllerIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/events/" + eventId))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReserveSeats() throws Exception {
+        Long eventId = createTestEvent("Event To Reserve", "Paris", 50);
+
+        SeatsRequest seatsRequest = new SeatsRequest();
+        seatsRequest.setSeats(10);
+
+        mockMvc.perform(patch("/api/events/" + eventId + "/reserve-seats")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(seatsRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableSeats").value(40));
+    }
+
+    @Test
+    void shouldReleaseSeats() throws Exception {
+        Long eventId = createTestEvent("Event To Release", "Paris", 50);
+
+        SeatsRequest seatsRequest = new SeatsRequest();
+        seatsRequest.setSeats(5);
+
+        mockMvc.perform(patch("/api/events/" + eventId + "/release-seats")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(seatsRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableSeats").value(55));
+    }
+
+    @Test
+    void shouldReturn409_whenAvailableSeatsIsLowerThanReserveSeats() throws Exception {
+        Long eventId = createTestEvent("Event To Reserve", "Paris", 50);
+        int reserveSeats = 52;
+
+        SeatsRequest seatsRequest = new SeatsRequest();
+        seatsRequest.setSeats(reserveSeats);
+
+        mockMvc.perform(patch("/api/events/" + eventId + "/reserve-seats")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(seatsRequest)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
     }
 
     private Long createTestEvent(String title, String location, int totalSeats) {

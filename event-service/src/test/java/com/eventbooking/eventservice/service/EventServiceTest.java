@@ -2,8 +2,10 @@ package com.eventbooking.eventservice.service;
 
 import com.eventbooking.eventservice.dto.EventRequest;
 import com.eventbooking.eventservice.dto.EventResponse;
+import com.eventbooking.eventservice.dto.SeatsRequest;
 import com.eventbooking.eventservice.entity.Event;
 import com.eventbooking.eventservice.exception.EventNotFoundException;
+import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
 import com.eventbooking.eventservice.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,5 +127,44 @@ public class EventServiceTest {
                 .isInstanceOf(InvalidTotalSeatsException.class);
 
         verify(eventRepository, never()).save(any(Event.class));
+    }
+
+    @Test
+    void reserveSeats_shouldDecrementAvailableSeats_whenReserveSeatsIsValid() {
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existingEvent));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        int reserveSeats = existingEvent.getAvailableSeats();
+
+        EventResponse response = eventService.reserveSeats(1L, reserveSeats);
+
+        assertThat(response.getAvailableSeats()).isEqualTo(0);
+        verify(eventRepository, times(1)).save(existingEvent);
+    }
+
+    @Test
+    void  reserveSeats_shouldThrowException_whenAvailableSeatsIsLowerThanReserveSeats() {
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existingEvent));
+
+        int reserveSeats = existingEvent.getAvailableSeats() + 1;
+
+        assertThatThrownBy(() -> eventService.reserveSeats(1L, reserveSeats))
+                .isInstanceOf(InsufficientSeatsException.class);
+
+        verify(eventRepository, never()).save(any(Event.class));
+    }
+
+    @Test
+    void releaseSeats_shouldIncrementAvailableSeats() {
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(existingEvent));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        int initialAvailableSeats = existingEvent.getAvailableSeats();
+        int releaseSeats = 1;
+
+        EventResponse response = eventService.releaseSeats(1L, releaseSeats);
+
+        assertThat(response.getAvailableSeats()).isEqualTo(initialAvailableSeats + releaseSeats);
+        verify(eventRepository, times(1)).save(existingEvent);
     }
 }
