@@ -2,6 +2,7 @@ package com.eventbooking.bookingservice.messaging;
 
 import com.eventbooking.bookingservice.config.RabbitMQConfig;
 import com.eventbooking.bookingservice.entity.Booking;
+import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,10 @@ public class EmailConfirmationPublisher {
                 booking.getEventId(),
                 booking.getSeatsBooked()
         );
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EMAIL_QUEUE, message);
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EMAIL_QUEUE, message, m -> {
+            m.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            return m;
+        });
     }
 }
