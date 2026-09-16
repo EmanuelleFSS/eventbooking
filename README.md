@@ -16,11 +16,12 @@ graph TD
     Gateway --> Assistant[AI Assistant<br/>Claude API]
 
     Event -.->|cache| Redis[(Redis)]
+    Event -->|Kafka | Search
 
     Booking --> Event
     Booking -->|Kafka | Search
-    Booking -->|Kafka | Notif[Notification Service]
-    Booking -->|RabbitMQ: email queue| Notif
+    Booking -->|Kafka | Notif[Notification Service<br/>PostgreSQL]
+    Booking -->|RabbitMQ | Notif
 
     Search -.->|lecture| Assistant
 ````
@@ -28,10 +29,11 @@ graph TD
 ## Tech Stack
 
 - **Language**: Java 21
-- **Framework**: Spring Boot 4, Spring Data JPA
-- **Database**: PostgreSQL (Flyway migrations)
+- **Framework**: Spring Boot 4, Spring Data JPA, Spring Data MongoDB
+- **Database**: PostgreSQL (Flyway migrations), MongoDB
 - **Testing**: JUnit 5, Mockito, Testcontainers
 - **Containerization**: Docker, Docker Compose
+- **Messaging**: Apache Kafka, RabbitMQ
 
 ## Timezone Handling
 
@@ -79,18 +81,24 @@ The API will be available at `http://localhost:8080`.
 
 ### Event Service
 * Manages the event catalog with **PostgreSQL** + **Spring Data JPA**.
+* Exposes `reserve-seats` / `release-seats` endpoints, consumed synchronously by Booking Service to guarantee strong consistency on seat availability.
+* Publishes catalog changes (`event.created` / `event.updated` / `event.deleted`) to **Kafka**, consumed by Search Service to build its read model.
 * Redis as a cache for read operations, since popular event pages are read heavily but rarely modified.
 
 ### Booking Service
-* Handles booking creation and available seats decrement, using optimistic locking to manage concurrency on reservations.
-* **PostgreSQL** + **Kafka**.
+* Handles booking creation and available seats decrement, calling Event Service **synchronously** to guarantee strong consistency and avoid overselling.
+* Publishes `booking.created` / `booking.cancelled` events to **Kafka** for asynchronous consumers, and confirmation email tasks to a **RabbitMQ** queue.
+* **PostgreSQL** for its own data.
 
 ### Notification Service
-* Consumes a **RabbitMQ** queue fed by the *Booking Service* on every booking.
-* Sends a confirmation email, with failure handling.
+* Consumes a **RabbitMQ** queue fed by *Booking Service* on every booking, sending a confirmation email.
+* Also consumes **Kafka** `booking-events` to track booking status changes.
+* **Idempotent** by design — a PostgreSQL ledger prevents duplicate processing if a message is redelivered (Kafka/RabbitMQ guarantee at-least-once delivery).
+* Failed messages are routed to a **dead-letter queue** instead of being retried indefinitely.
 
 ### Search Service
-* Consumes **Kafka** events to maintain a denormalized view in **MongoDB**.
+* Consumes **Kafka** events from both Event Service (catalog) and Booking Service (bookings) to maintain a denormalized read model in **MongoDB** — a CQRS-style read model built from multiple event streams.
+* Exposes `GET /api/search/events?q=...` for text-based search, with a live booking popularity count per event.
 
 ### API Gateway
 * Spring Cloud Gateway, routing to the 3 business services.
