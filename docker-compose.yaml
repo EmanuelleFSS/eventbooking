@@ -78,6 +78,30 @@ services:
       - kafka
       - rabbitmq
       - event-service
+
+  mongodb:
+    image: mongo:8
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  search-service:
+    build: ./search-service
+    container_name: search-service
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/searchservice?authSource=admin
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8083:8080"
+    depends_on:
+      - mongodb
+      - kafka
 volumes:
   postgres_data:
   booking_postgres_data:
+  mongo_data:
