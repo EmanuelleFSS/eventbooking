@@ -7,6 +7,8 @@ import com.eventbooking.eventservice.exception.EventNotFoundException;
 import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
 import com.eventbooking.eventservice.mapper.EventMapper;
+import com.eventbooking.eventservice.messaging.CatalogEvent;
+import com.eventbooking.eventservice.messaging.CatalogEventPublisher;
 import com.eventbooking.eventservice.repository.EventRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,15 +18,21 @@ import org.springframework.stereotype.Service;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final CatalogEventPublisher catalogEventPublisher;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, CatalogEventPublisher catalogEventPublisher) {
         this.eventRepository = eventRepository;
+        this.catalogEventPublisher = catalogEventPublisher;
     }
 
     public EventResponse createEvent(EventRequest request) {
         Event event = EventMapper.toEntity(request);
         event.setAvailableSeats(event.getTotalSeats()); // Business rule: available seats = total seats
-        return EventMapper.toResponse(eventRepository.save(event));
+
+        Event savedEvent = eventRepository.save(event);
+        catalogEventPublisher.publishCreated(savedEvent);
+
+        return EventMapper.toResponse(savedEvent);
     }
 
     public EventResponse getEventById(Long id) {
@@ -48,11 +56,15 @@ public class EventService {
         existingEvent.setTotalSeats(request.getTotalSeats());
         existingEvent.setAvailableSeats(updatedAvailableSeats);
 
-        return EventMapper.toResponse(eventRepository.save(existingEvent));
+        Event savedEvent = eventRepository.save(existingEvent);
+        catalogEventPublisher.publishUpdated(savedEvent);
+
+        return EventMapper.toResponse(savedEvent);
     }
 
     public void deleteEvent(Long id) {
         Event event = findEventOrThrow(id);
+        catalogEventPublisher.publishDeleted(event.getId());
         eventRepository.delete(event);
     }
 

@@ -7,6 +7,8 @@ import com.eventbooking.eventservice.entity.Event;
 import com.eventbooking.eventservice.exception.EventNotFoundException;
 import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
+import com.eventbooking.eventservice.messaging.CatalogEvent;
+import com.eventbooking.eventservice.messaging.CatalogEventPublisher;
 import com.eventbooking.eventservice.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,9 @@ public class EventServiceTest {
     @Mock
     private EventRepository eventRepository;
 
+    @Mock
+    private CatalogEventPublisher catalogEventPublisher;
+
     @InjectMocks
     private EventService eventService;
 
@@ -48,7 +53,7 @@ public class EventServiceTest {
     }
 
     @Test
-    void creatEvent_shouldSetAvailableSeatsEqualToTotalSeats() {
+    void createEvent_shouldSetAvailableSeatsEqualToTotalSeats() {
         EventRequest request = new EventRequest();
         request.setTitle("New Event");
         request.setEventDate(OffsetDateTime.now().plusDays(5));
@@ -66,6 +71,7 @@ public class EventServiceTest {
         assertThat(response.getAvailableSeats()).isEqualTo(50);
         assertThat(response.getTotalSeats()).isEqualTo(50);
         verify(eventRepository, times(1)).save(any(Event.class));
+        verify(catalogEventPublisher, times(1)).publishCreated(any());
     }
 
     @Test
@@ -94,6 +100,7 @@ public class EventServiceTest {
         eventService.deleteEvent(1L);
 
         verify(eventRepository, times(1)).delete(existingEvent);
+        verify(catalogEventPublisher, times(1)).publishDeleted(existingEvent.getId());
     }
 
     @Test
@@ -111,6 +118,7 @@ public class EventServiceTest {
 
         assertThat(response.getTotalSeats()).isEqualTo(80);
         assertThat(response.getAvailableSeats()).isEqualTo(50); // 80 - 30 sold
+        verify(catalogEventPublisher, times(1)).publishUpdated(any());
     }
 
     @Test
