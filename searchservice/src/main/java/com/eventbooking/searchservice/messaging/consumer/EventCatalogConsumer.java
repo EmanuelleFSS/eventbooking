@@ -31,7 +31,7 @@ public class EventCatalogConsumer {
         document.setId(event.eventId().toString());
         document.setTitle(event.title());
         document.setLocation(event.location());
-        document.setEventDate(event.eventDate());
+        document.setEventDate(event.eventDate().toInstant());
 
         repository.save(document);
     }

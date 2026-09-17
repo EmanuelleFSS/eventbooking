@@ -6,7 +6,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Document(collection = "events")
 @Getter
@@ -18,6 +18,6 @@ public class EventSearchDocument {
     private String id;
     private String title;
     private String location;
-    private OffsetDateTime eventDate;
+    private Instant eventDate;
     private int bookingsCount;
 }
