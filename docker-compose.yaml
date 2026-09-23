@@ -106,7 +106,37 @@ services:
     depends_on:
       - mongodb
       - kafka
+
+  notification-postgres:
+    image: postgres:18
+    container_name: notification-postgres
+    environment:
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+      POSTGRES_USER: ${NOTIFICATION_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - notification_postgres_data:/var/lib/postgresql
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    environment:
+      NOTIFICATION_DB_NAME: ${NOTIFICATION_DB_NAME}
+      NOTIFICATION_DB_USER: ${NOTIFICATION_DB_USER}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://notification-postgres:5432/${NOTIFICATION_DB_NAME}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8082:8080"
+    depends_on:
+      - notification-postgres
+      - kafka
+      - rabbitmq
 volumes:
   postgres_data:
   booking_postgres_data:
   mongo_data:
+  notification_postgres_data:
