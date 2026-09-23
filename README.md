@@ -29,7 +29,7 @@ graph TD
 ## Tech Stack
 
 - **Language**: Java 21
-- **Framework**: Spring Boot 4, Spring Data JPA, Spring Data MongoDB
+- **Framework**: Spring Boot 4
 - **Database**: PostgreSQL (Flyway migrations), MongoDB
 - **Testing**: JUnit 5, Mockito, Testcontainers
 - **Containerization**: Docker, Docker Compose
@@ -68,11 +68,21 @@ The API will be available at `http://localhost:8080`.
 | GET | `/api/bookings/{id}` | Get a booking by id |
 | POST | `/api/bookings/{id}/cancel` | Cancel a booking (releases seats via compensation) |
 
+## Notification Service
+
+Consumes booking and email confirmation events asynchronously — no public REST endpoint.
+
+## Search Service — API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|--------------|
+| GET | `/api/search/events?q=...` | Search events by title (case-insensitive, partial match) |
+
 ## Roadmap
 
 - [x] Phase 1 — Event Service (CRUD, PostgreSQL, tests, Docker)
 - [x] Phase 2 — Booking Service + Kafka
-- [ ] Phase 3 — Notification Service (RabbitMQ) + Search Service (MongoDB)
+- [x] Phase 3 — Notification Service (RabbitMQ) + Search Service (MongoDB)
 - [ ] Phase 4 — Redis cache + API Gateway + Security
 - [ ] Phase 5 — Load testing (Gatling)
 - [ ] Phase 6 — CI/CD + AI Assistant + Cloud deployment
@@ -91,7 +101,7 @@ The API will be available at `http://localhost:8080`.
 * **PostgreSQL** for its own data.
 
 ### Notification Service
-* Consumes a **RabbitMQ** queue fed by *Booking Service* on every booking, sending a confirmation email.
+* Consumes a **RabbitMQ** queue fed by *Booking Service* on every booking, sending a confirmation email (currently simulated via logging — real SMTP/API integration planned).
 * Also consumes **Kafka** `booking-events` to track booking status changes.
 * **Idempotent** by design — a PostgreSQL ledger prevents duplicate processing if a message is redelivered (Kafka/RabbitMQ guarantee at-least-once delivery).
 * Failed messages are routed to a **dead-letter queue** instead of being retried indefinitely.
