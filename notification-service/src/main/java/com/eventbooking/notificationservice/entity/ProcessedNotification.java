@@ -27,9 +27,8 @@ public class ProcessedNotification {
     @Column(name = "booking_id", nullable = false)
     private Long bookingId;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "notification_type", nullable = false, length = 50)
-    private NotificationType notificationType;
+    private String notificationType;
 
     @Column(name = "processed_at", nullable = false, updatable = false)
     private Instant processedAt;

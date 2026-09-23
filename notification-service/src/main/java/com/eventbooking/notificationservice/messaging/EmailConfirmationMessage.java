@@ -1,4 +1,4 @@
-package com.eventbooking.bookingservice.messaging;
+package com.eventbooking.notificationservice.messaging;
 
 import java.io.Serializable;
 

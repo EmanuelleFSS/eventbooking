@@ -117,7 +117,7 @@ services:
     ports:
       - "5435:5432"
     volumes:
-      - notification_postgres_data:/var/lib/postgresql
+      - notification_postgres_data:/var/lib/postgresql/data
 
   notification-service:
     build: ./notification-service
