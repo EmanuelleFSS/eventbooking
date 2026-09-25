@@ -31,13 +31,8 @@ public class EventService {
         event.setAvailableSeats(event.getTotalSeats()); // Business rule: available seats = total seats
 
         Event savedEvent = eventRepository.save(event);
-        try {
-            catalogEventPublisher.publishCreated(savedEvent);
-        } catch (Exception e) {
-            log.error("Failed to publish catalog event for event {}: {}", savedEvent.getId(), e.getMessage(), e);
-            // Known limitation: Search Service's read model will be stale until Phase 6's
-            // outbox pattern replaces this best-effort publish.
-        }
+        publishCatalogEvent(() -> catalogEventPublisher.publishCreated(savedEvent), savedEvent.getId());
+
         return EventMapper.toResponse(savedEvent);
     }
 
@@ -63,15 +58,25 @@ public class EventService {
         existingEvent.setAvailableSeats(updatedAvailableSeats);
 
         Event savedEvent = eventRepository.save(existingEvent);
-        catalogEventPublisher.publishUpdated(savedEvent);
+        publishCatalogEvent(() -> catalogEventPublisher.publishUpdated(savedEvent), savedEvent.getId());
 
         return EventMapper.toResponse(savedEvent);
     }
 
     public void deleteEvent(Long id) {
         Event event = findEventOrThrow(id);
-        catalogEventPublisher.publishDeleted(event.getId());
+        publishCatalogEvent(() -> catalogEventPublisher.publishDeleted(event.getId()), event.getId());
         eventRepository.delete(event);
+    }
+
+    private void publishCatalogEvent(Runnable publishAction, Long eventId) {
+        try {
+            publishAction.run();
+        } catch (Exception e) {
+            log.error("Failed to publish catalog event for event {}: {}", eventId, e.getMessage(), e);
+            // Known limitation: Search Service's read model will be stale until Phase 6's
+            // outbox pattern replaces this best-effort publish.
+        }
     }
 
     private Event findEventOrThrow(Long id) {

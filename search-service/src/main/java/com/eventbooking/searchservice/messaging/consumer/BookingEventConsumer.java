@@ -19,7 +19,7 @@ public class BookingEventConsumer {
         this.processedBookingEventRepository = processedBookingEventRepository;
     }
 
-    @KafkaListener(topics = "booking-events", groupId = "search-service")
+    @KafkaListener(topics = "booking-events", groupId = "search-service-booking")
     public void handleBookingEvent(BookingEvent event) {
         String dedupeKey = event.bookingId() + "-" + event.status(); // ex: 5-CREATED
 

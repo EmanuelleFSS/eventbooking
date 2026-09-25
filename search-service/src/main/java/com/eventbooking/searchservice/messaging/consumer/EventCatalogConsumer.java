@@ -15,7 +15,7 @@ public class EventCatalogConsumer {
         this.repository = repository;
     }
 
-    @KafkaListener(topics = "event-catalog-events", groupId = "search-service")
+    @KafkaListener(topics = "event-catalog-events", groupId = "search-service-catalog")
     public void handleCatalogEvent(CatalogEvent event) {
         switch (event.changeType()) {
             case "CREATED", "UPDATED" -> upsertDocument(event);
