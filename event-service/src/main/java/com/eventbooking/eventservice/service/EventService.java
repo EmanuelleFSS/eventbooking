@@ -7,13 +7,14 @@ import com.eventbooking.eventservice.exception.EventNotFoundException;
 import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
 import com.eventbooking.eventservice.mapper.EventMapper;
-import com.eventbooking.eventservice.messaging.CatalogEvent;
 import com.eventbooking.eventservice.messaging.CatalogEventPublisher;
 import com.eventbooking.eventservice.repository.EventRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class EventService {
 
@@ -30,8 +31,13 @@ public class EventService {
         event.setAvailableSeats(event.getTotalSeats()); // Business rule: available seats = total seats
 
         Event savedEvent = eventRepository.save(event);
-        catalogEventPublisher.publishCreated(savedEvent);
-
+        try {
+            catalogEventPublisher.publishCreated(savedEvent);
+        } catch (Exception e) {
+            log.error("Failed to publish catalog event for event {}: {}", savedEvent.getId(), e.getMessage(), e);
+            // Known limitation: Search Service's read model will be stale until Phase 6's
+            // outbox pattern replaces this best-effort publish.
+        }
         return EventMapper.toResponse(savedEvent);
     }
 

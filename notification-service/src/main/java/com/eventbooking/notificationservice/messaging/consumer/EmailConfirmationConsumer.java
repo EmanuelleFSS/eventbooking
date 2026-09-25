@@ -4,6 +4,7 @@ import com.eventbooking.notificationservice.entity.ProcessedNotification;
 import com.eventbooking.notificationservice.messaging.EmailConfirmationMessage;
 import com.eventbooking.notificationservice.repository.ProcessedNotificationRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -21,17 +22,18 @@ public class EmailConfirmationConsumer {
 
     @RabbitListener(queues = "booking.email-confirmation")
     public void handleEmailConfirmation(EmailConfirmationMessage message) {
-        if (processedNotificationRepository.existsByBookingIdAndNotificationType(message.bookingId(), NOTIFICATION_TYPE)) {
+        ProcessedNotification record = new ProcessedNotification();
+        record.setBookingId(message.bookingId());
+        record.setNotificationType(NOTIFICATION_TYPE);
+        record.setProcessedAt(Instant.now());
+
+        try {
+            processedNotificationRepository.save(record);
+        } catch (DataIntegrityViolationException e) {
             return;
         }
 
         System.out.println("Sending confirmation email to " + message.customerEmail()
                 + " for event " + message.eventId());
-
-        ProcessedNotification record = new ProcessedNotification();
-        record.setBookingId(message.bookingId());
-        record.setNotificationType(NOTIFICATION_TYPE);
-        record.setProcessedAt(Instant.now());
-        processedNotificationRepository.save(record);
     }
 }

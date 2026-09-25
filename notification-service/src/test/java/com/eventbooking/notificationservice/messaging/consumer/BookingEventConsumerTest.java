@@ -9,6 +9,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
 
@@ -29,9 +30,6 @@ public class BookingEventConsumerTest {
         BookingEvent event = new BookingEvent(
                 5L, 20L, "test@example.com", 3, "CREATED", Instant.now());
 
-        when(processedNotificationRepository.existsByBookingIdAndNotificationType(5L, "BOOKING_CREATED"))
-                .thenReturn(false);
-
         bookingEventConsumer.handleBookingEvent(event);
 
         ArgumentCaptor<ProcessedNotification> captor = ArgumentCaptor.forClass(ProcessedNotification.class);
@@ -47,9 +45,6 @@ public class BookingEventConsumerTest {
         BookingEvent event = new BookingEvent(
                 5L, 20L, "test@example.com", 3, "CANCELLED", Instant.now());
 
-        when(processedNotificationRepository.existsByBookingIdAndNotificationType(5L, "BOOKING_CANCELLED"))
-                .thenReturn(false);
-
         bookingEventConsumer.handleBookingEvent(event);
 
         ArgumentCaptor<ProcessedNotification> captor = ArgumentCaptor.forClass(ProcessedNotification.class);
@@ -59,15 +54,15 @@ public class BookingEventConsumerTest {
     }
 
     @Test
-    void handleBookingEvent_shouldDoNothing_whenAlreadyProcessed() {
+    void handleBookingEvent_shouldNotThrow_whenInsertFailsWithUniqueConstraintViolation() {
         BookingEvent event = new BookingEvent(
                 5L, 20L, "test@example.com", 3, "CREATED", Instant.now());
 
-        when(processedNotificationRepository.existsByBookingIdAndNotificationType(5L, "BOOKING_CREATED"))
-                .thenReturn(true);
+        doThrow(new DataIntegrityViolationException("duplicate key"))
+                .when(processedNotificationRepository).save(any(ProcessedNotification.class));
 
         bookingEventConsumer.handleBookingEvent(event);
 
-        verify(processedNotificationRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(processedNotificationRepository, times(1)).save(any(ProcessedNotification.class));
     }
 }

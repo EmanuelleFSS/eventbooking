@@ -12,6 +12,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.eventbooking.searchservice.messaging,com.eventbooking.eventservice.messaging"
-        spring.json.value.default.type: com.eventbooking.searchservice.messaging.CatalogEvent
-        spring.json.use.type.headers: false
+        spring.json.trusted.packages: "com.eventbooking.searchservice.messaging"
+        spring.json.type.mapping: >
+          catalogEvent:com.eventbooking.searchservice.messaging.CatalogEvent,
+          bookingEvent:com.eventbooking.searchservice.messaging.BookingEvent

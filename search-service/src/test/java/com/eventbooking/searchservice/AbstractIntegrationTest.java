@@ -1,14 +1,19 @@
 package com.eventbooking.searchservice;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.mongodb.MongoDBContainer;
 
-@Testcontainers
 public abstract class AbstractIntegrationTest {
 
-    @Container
     @ServiceConnection
-    static MongoDBContainer mongodb = new MongoDBContainer("mongo:8");
+    protected static final MongoDBContainer mongodb = new MongoDBContainer("mongo:8");
+
+    @ServiceConnection
+    protected static final KafkaContainer kafka = new KafkaContainer("apache/kafka:latest");
+
+    static {
+        mongodb.start();
+        kafka.start();
+    }
 }

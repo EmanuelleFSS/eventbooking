@@ -2,12 +2,10 @@ package com.eventbooking.eventservice.service;
 
 import com.eventbooking.eventservice.dto.EventRequest;
 import com.eventbooking.eventservice.dto.EventResponse;
-import com.eventbooking.eventservice.dto.SeatsRequest;
 import com.eventbooking.eventservice.entity.Event;
 import com.eventbooking.eventservice.exception.EventNotFoundException;
 import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
-import com.eventbooking.eventservice.messaging.CatalogEvent;
 import com.eventbooking.eventservice.messaging.CatalogEventPublisher;
 import com.eventbooking.eventservice.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -174,5 +172,31 @@ public class EventServiceTest {
 
         assertThat(response.getAvailableSeats()).isEqualTo(initialAvailableSeats + releaseSeats);
         verify(eventRepository, times(1)).save(existingEvent);
+    }
+
+    @Test
+    void createEvent_shouldStillReturnCreatedEvent_whenCatalogEventPublishFails() {
+        EventRequest request = new EventRequest();
+        request.setTitle("New Event");
+        request.setEventDate(OffsetDateTime.now().plusDays(5));
+        request.setLocation("Lyon");
+        request.setTotalSeats(50);
+
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> {
+            Event savedEvent = invocation.getArgument(0);
+            savedEvent.setId(2L);
+            return savedEvent;
+        });
+
+        doThrow(new RuntimeException("Kafka unavailable"))
+                .when(catalogEventPublisher).publishCreated(any());
+
+        EventResponse response = eventService.createEvent(request);
+
+        assertThat(response.getId()).isEqualTo(2L);
+        assertThat(response.getAvailableSeats()).isEqualTo(50);
+        assertThat(response.getTotalSeats()).isEqualTo(50);
+        verify(eventRepository, times(1)).save(any(Event.class));
+        verify(catalogEventPublisher, times(1)).publishCreated(any());
     }
 }

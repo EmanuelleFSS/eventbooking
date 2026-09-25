@@ -5,6 +5,7 @@ import com.eventbooking.notificationservice.messaging.BookingEvent;
 import com.eventbooking.notificationservice.repository.ProcessedNotificationRepository;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,6 +38,11 @@ public class BookingEventConsumerIntegrationTest extends AbstractIntegrationTest
 
     @Autowired
     private ProcessedNotificationRepository processedNotificationRepository;
+
+    @BeforeEach
+    void cleanUp() {
+        processedNotificationRepository.deleteAll();
+    }
 
     @Test
     void shouldProcessEventOnlyOnce_whenPublishedTwice() {

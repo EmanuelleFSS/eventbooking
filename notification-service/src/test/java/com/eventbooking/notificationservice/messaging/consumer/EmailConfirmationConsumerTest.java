@@ -9,6 +9,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -29,9 +30,6 @@ public class EmailConfirmationConsumerTest {
         EmailConfirmationMessage message = new EmailConfirmationMessage(
                 "test@example.com", 10L, 1L, 2);
 
-        when(processedNotificationRepository.existsByBookingIdAndNotificationType(1L, NOTIFICATION_TYPE))
-                .thenReturn(false);
-
         emailConfirmationConsumer.handleEmailConfirmation(message);
 
         ArgumentCaptor<ProcessedNotification> captor = ArgumentCaptor.forClass(ProcessedNotification.class);
@@ -43,15 +41,15 @@ public class EmailConfirmationConsumerTest {
     }
 
     @Test
-    void handleEmailConfirmation_shouldDoNothing_whenAlreadyProcessed() {
+    void handleEmailConfirmation_shouldNotSendEmailTwice_whenInsertFailsWithUniqueConstraintViolation() {
         EmailConfirmationMessage message = new EmailConfirmationMessage(
                 "test@example.com", 10L, 1L, 2);
 
-        when(processedNotificationRepository.existsByBookingIdAndNotificationType(1L, NOTIFICATION_TYPE))
-                .thenReturn(true);
+        doThrow(new DataIntegrityViolationException("duplicate key"))
+                .when(processedNotificationRepository).save(any(ProcessedNotification.class));
 
         emailConfirmationConsumer.handleEmailConfirmation(message);
 
-        verify(processedNotificationRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(processedNotificationRepository, times(1)).save(any(ProcessedNotification.class));
     }
 }
