@@ -7,24 +7,33 @@ import com.eventbooking.eventservice.exception.EventNotFoundException;
 import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
 import com.eventbooking.eventservice.mapper.EventMapper;
+import com.eventbooking.eventservice.messaging.CatalogEventPublisher;
 import com.eventbooking.eventservice.repository.EventRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final CatalogEventPublisher catalogEventPublisher;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, CatalogEventPublisher catalogEventPublisher) {
         this.eventRepository = eventRepository;
+        this.catalogEventPublisher = catalogEventPublisher;
     }
 
     public EventResponse createEvent(EventRequest request) {
         Event event = EventMapper.toEntity(request);
         event.setAvailableSeats(event.getTotalSeats()); // Business rule: available seats = total seats
-        return EventMapper.toResponse(eventRepository.save(event));
+
+        Event savedEvent = eventRepository.save(event);
+        publishCatalogEvent(() -> catalogEventPublisher.publishCreated(savedEvent), savedEvent.getId());
+
+        return EventMapper.toResponse(savedEvent);
     }
 
     public EventResponse getEventById(Long id) {
@@ -48,12 +57,26 @@ public class EventService {
         existingEvent.setTotalSeats(request.getTotalSeats());
         existingEvent.setAvailableSeats(updatedAvailableSeats);
 
-        return EventMapper.toResponse(eventRepository.save(existingEvent));
+        Event savedEvent = eventRepository.save(existingEvent);
+        publishCatalogEvent(() -> catalogEventPublisher.publishUpdated(savedEvent), savedEvent.getId());
+
+        return EventMapper.toResponse(savedEvent);
     }
 
     public void deleteEvent(Long id) {
         Event event = findEventOrThrow(id);
+        publishCatalogEvent(() -> catalogEventPublisher.publishDeleted(event.getId()), event.getId());
         eventRepository.delete(event);
+    }
+
+    private void publishCatalogEvent(Runnable publishAction, Long eventId) {
+        try {
+            publishAction.run();
+        } catch (Exception e) {
+            log.error("Failed to publish catalog event for event {}: {}", eventId, e.getMessage(), e);
+            // Known limitation: Search Service's read model will be stale until Phase 6's
+            // outbox pattern replaces this best-effort publish.
+        }
     }
 
     private Event findEventOrThrow(Long id) {

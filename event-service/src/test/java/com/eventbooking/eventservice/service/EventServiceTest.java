@@ -2,11 +2,11 @@ package com.eventbooking.eventservice.service;
 
 import com.eventbooking.eventservice.dto.EventRequest;
 import com.eventbooking.eventservice.dto.EventResponse;
-import com.eventbooking.eventservice.dto.SeatsRequest;
 import com.eventbooking.eventservice.entity.Event;
 import com.eventbooking.eventservice.exception.EventNotFoundException;
 import com.eventbooking.eventservice.exception.InsufficientSeatsException;
 import com.eventbooking.eventservice.exception.InvalidTotalSeatsException;
+import com.eventbooking.eventservice.messaging.CatalogEventPublisher;
 import com.eventbooking.eventservice.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +30,9 @@ public class EventServiceTest {
     @Mock
     private EventRepository eventRepository;
 
+    @Mock
+    private CatalogEventPublisher catalogEventPublisher;
+
     @InjectMocks
     private EventService eventService;
 
@@ -48,7 +51,7 @@ public class EventServiceTest {
     }
 
     @Test
-    void creatEvent_shouldSetAvailableSeatsEqualToTotalSeats() {
+    void createEvent_shouldSetAvailableSeatsEqualToTotalSeats() {
         EventRequest request = new EventRequest();
         request.setTitle("New Event");
         request.setEventDate(OffsetDateTime.now().plusDays(5));
@@ -66,6 +69,7 @@ public class EventServiceTest {
         assertThat(response.getAvailableSeats()).isEqualTo(50);
         assertThat(response.getTotalSeats()).isEqualTo(50);
         verify(eventRepository, times(1)).save(any(Event.class));
+        verify(catalogEventPublisher, times(1)).publishCreated(any());
     }
 
     @Test
@@ -94,6 +98,7 @@ public class EventServiceTest {
         eventService.deleteEvent(1L);
 
         verify(eventRepository, times(1)).delete(existingEvent);
+        verify(catalogEventPublisher, times(1)).publishDeleted(existingEvent.getId());
     }
 
     @Test
@@ -111,6 +116,7 @@ public class EventServiceTest {
 
         assertThat(response.getTotalSeats()).isEqualTo(80);
         assertThat(response.getAvailableSeats()).isEqualTo(50); // 80 - 30 sold
+        verify(catalogEventPublisher, times(1)).publishUpdated(any());
     }
 
     @Test
@@ -166,5 +172,31 @@ public class EventServiceTest {
 
         assertThat(response.getAvailableSeats()).isEqualTo(initialAvailableSeats + releaseSeats);
         verify(eventRepository, times(1)).save(existingEvent);
+    }
+
+    @Test
+    void createEvent_shouldStillReturnCreatedEvent_whenCatalogEventPublishFails() {
+        EventRequest request = new EventRequest();
+        request.setTitle("New Event");
+        request.setEventDate(OffsetDateTime.now().plusDays(5));
+        request.setLocation("Lyon");
+        request.setTotalSeats(50);
+
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> {
+            Event savedEvent = invocation.getArgument(0);
+            savedEvent.setId(2L);
+            return savedEvent;
+        });
+
+        doThrow(new RuntimeException("Kafka unavailable"))
+                .when(catalogEventPublisher).publishCreated(any());
+
+        EventResponse response = eventService.createEvent(request);
+
+        assertThat(response.getId()).isEqualTo(2L);
+        assertThat(response.getAvailableSeats()).isEqualTo(50);
+        assertThat(response.getTotalSeats()).isEqualTo(50);
+        verify(eventRepository, times(1)).save(any(Event.class));
+        verify(catalogEventPublisher, times(1)).publishCreated(any());
     }
 }

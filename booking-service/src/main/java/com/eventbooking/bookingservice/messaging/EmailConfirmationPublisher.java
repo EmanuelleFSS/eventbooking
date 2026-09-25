@@ -19,6 +19,7 @@ public class EmailConfirmationPublisher {
         EmailConfirmationMessage message = new EmailConfirmationMessage(
                 booking.getCustomerEmail(),
                 booking.getEventId(),
+                booking.getId(),
                 booking.getSeatsBooked()
         );
 
